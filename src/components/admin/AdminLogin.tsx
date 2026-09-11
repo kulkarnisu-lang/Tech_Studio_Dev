@@ -15,13 +15,23 @@ import {
 import { useAdmin } from '../../context/AdminContext';
 
 export default function AdminLogin() {
-  const { login, loginWithGoogle, closeAdmin, companyConfig, credentials, adminEmail } = useAdmin();
+  const { login, loginWithGoogle, verifyEmailAccess, closeAdmin, companyConfig, credentials, adminEmail } = useAdmin();
   const [username, setUsername] = useState(credentials.username);
   const [passcode, setPasscode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [testCheckResult, setTestCheckResult] = useState<{
+    authorized: boolean;
+    message: string;
+    email: string;
+  } | null>(null);
+
+  const runEmailCheck = async (emailToTest: string) => {
+    const res = await verifyEmailAccess(emailToTest);
+    setTestCheckResult(res);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,6 +221,75 @@ export default function AdminLogin() {
               <span>{isSubmitting ? 'Authenticating...' : 'Sign In with Passcode'}</span>
             </button>
           </form>
+
+          {/* Access Policy Verification Tester */}
+          <div className="mt-6 pt-5 border-t border-slate-800/80">
+            <div className="flex items-center justify-between text-xs mb-2">
+              <span className="text-slate-300 font-mono font-bold flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-sky-400" />
+                <span>Test Email Authorization</span>
+              </span>
+              <span className="text-[10px] font-mono text-slate-500 uppercase">Policy Test</span>
+            </div>
+
+            <p className="text-[11px] text-slate-400 font-mono mb-2.5">
+              Verify whether an account has administrator privileges under current access rules:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => runEmailCheck('kulkarnisu@gmail.com')}
+                className="py-2 px-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 text-[11px] font-mono text-slate-300 transition-colors cursor-pointer text-left flex items-center justify-between group"
+                title="Test kulkarnisu@gmail.com"
+              >
+                <div className="truncate">
+                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Check Visitor</span>
+                  <span className="text-rose-300 group-hover:text-rose-200 font-medium truncate block">kulkarnisu@gmail.com</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 font-mono shrink-0 ml-1">Run →</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => runEmailCheck('devmarlow01@gmail.com')}
+                className="py-2 px-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 text-[11px] font-mono text-slate-300 transition-colors cursor-pointer text-left flex items-center justify-between group"
+                title="Test devmarlow01@gmail.com"
+              >
+                <div className="truncate">
+                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Check Owner</span>
+                  <span className="text-emerald-300 group-hover:text-emerald-200 font-medium truncate block">devmarlow01@gmail.com</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 font-mono shrink-0 ml-1">Run →</span>
+              </button>
+            </div>
+
+            {testCheckResult && (
+              <div
+                className={`p-3 rounded-lg border text-xs font-mono space-y-1.5 transition-all ${
+                  testCheckResult.authorized
+                    ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-200'
+                    : 'bg-rose-950/40 border-rose-800/80 text-rose-200'
+                }`}
+              >
+                <div className="flex items-center justify-between font-bold">
+                  <span className="flex items-center gap-1.5">
+                    {testCheckResult.authorized ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    )}
+                    <span>{testCheckResult.authorized ? 'ACCESS AUTHORIZED' : 'ACCESS DENIED'}</span>
+                  </span>
+                  <span className="text-[10px] font-mono opacity-80">{testCheckResult.email}</span>
+                </div>
+                <p className="text-[11px] leading-relaxed opacity-95">{testCheckResult.message}</p>
+                <div className="pt-1 border-t border-current/20 text-[10px] opacity-75">
+                  Policy rule: Only <span className="font-bold underline">{adminEmail}</span> is granted administrative access.
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer info */}

@@ -14,7 +14,15 @@ import {
 import { useAdmin } from '../../context/AdminContext';
 
 export default function AdminSecurityTab() {
-  const { credentials, updateCredentials, resetCredentialsToDefault, activityLogs, adminEmail, currentUserEmail } = useAdmin();
+  const {
+    credentials,
+    updateCredentials,
+    resetCredentialsToDefault,
+    activityLogs,
+    adminEmail,
+    currentUserEmail,
+    verifyEmailAccess,
+  } = useAdmin();
 
   // Form State
   const [newUsername, setNewUsername] = useState(credentials.username);
@@ -29,6 +37,20 @@ export default function AdminSecurityTab() {
   const [testUser, setTestUser] = useState('');
   const [testPass, setTestPass] = useState('');
   const [testResult, setTestResult] = useState<{ valid: boolean; message: string } | null>(null);
+
+  // Test email access state
+  const [testEmailInput, setTestEmailInput] = useState('');
+  const [testEmailResult, setTestEmailResult] = useState<{
+    authorized: boolean;
+    message: string;
+    email: string;
+  } | null>(null);
+
+  const handleTestEmail = async (emailToTest: string) => {
+    setTestEmailInput(emailToTest);
+    const result = await verifyEmailAccess(emailToTest);
+    setTestEmailResult(result);
+  };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -300,6 +322,79 @@ export default function AdminSecurityTab() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Email Access Policy Test Tool */}
+          <div className="p-6 rounded-xl bg-white dark:bg-[#0C111A] border border-slate-200 dark:border-slate-800 shadow-xs">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-2 mb-2">
+              <Shield className="w-4 h-4 text-sky-500" />
+              <span>Email Authorization Policy Tester</span>
+            </h3>
+            <p className="text-xs text-slate-500 mb-3">
+              Confirm which accounts are authorized for administrative operations and which are rejected.
+            </p>
+
+            <div className="space-y-2 mb-3">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleTestEmail('kulkarnisu@gmail.com')}
+                  className="py-1.5 px-2 rounded-md bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-mono font-medium text-slate-700 dark:text-slate-300 transition-colors cursor-pointer text-left truncate"
+                >
+                  Test: <span className="text-rose-500 dark:text-rose-400">kulkarnisu</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTestEmail('devmarlow01@gmail.com')}
+                  className="py-1.5 px-2 rounded-md bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-mono font-medium text-slate-700 dark:text-slate-300 transition-colors cursor-pointer text-left truncate"
+                >
+                  Test: <span className="text-emerald-500 dark:text-emerald-400">devmarlow01</span>
+                </button>
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={testEmailInput}
+                  onChange={(e) => {
+                    setTestEmailInput(e.target.value);
+                    setTestEmailResult(null);
+                  }}
+                  placeholder="Enter email to check policy..."
+                  className="w-full px-3 py-1.5 rounded-md bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => testEmailInput.trim() && handleTestEmail(testEmailInput.trim())}
+                  className="py-1.5 px-3 rounded-md bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-mono font-bold transition-colors cursor-pointer shrink-0"
+                >
+                  Verify
+                </button>
+              </div>
+            </div>
+
+            {testEmailResult && (
+              <div
+                className={`p-3 rounded-lg text-xs font-mono border ${
+                  testEmailResult.authorized
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                    : 'bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800'
+                }`}
+              >
+                <div className="flex items-center justify-between font-bold mb-1">
+                  <span className="flex items-center gap-1.5">
+                    {testEmailResult.authorized ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                    )}
+                    <span>{testEmailResult.authorized ? 'ACCESS PERMITTED' : 'ACCESS DENIED'}</span>
+                  </span>
+                  <span className="text-[10px] opacity-75">{testEmailResult.email}</span>
+                </div>
+                <p className="text-[11px] leading-relaxed opacity-90">{testEmailResult.message}</p>
+              </div>
+            )}
           </div>
 
           {/* Test Credentials Box */}

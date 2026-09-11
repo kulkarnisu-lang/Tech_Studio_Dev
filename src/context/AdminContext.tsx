@@ -28,7 +28,7 @@ import { FAQS_DATA } from '../data/faqs';
 import { INITIAL_INQUIRIES } from '../data/sampleInquiries';
 
 export const AUTHORIZED_ADMIN_EMAIL =
-  (import.meta.env.VITE_ADMIN_EMAIL as string) || 'kulkarnisu@gmail.com';
+  (import.meta.env.VITE_ADMIN_EMAIL as string) || 'devmarlow01@gmail.com';
 
 const STORAGE_KEYS = {
   AUTH: 'techstudio_admin_auth_v1',
@@ -80,6 +80,7 @@ interface AdminContextType {
   credentials: AdminCredentials;
   login: (usernameOrPasscode: string, passcode?: string) => boolean;
   loginWithGoogle: () => Promise<{ success: boolean; message: string }>;
+  verifyEmailAccess: (email: string) => Promise<{ authorized: boolean; message: string; email: string }>;
   logout: () => Promise<void>;
   updateCredentials: (newUsername: string, newPasscode: string) => Promise<{ success: boolean; message: string }>;
   resetCredentialsToDefault: () => Promise<void>;
@@ -123,21 +124,41 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem(STORAGE_KEYS.AUTH) === 'true';
+    const isAuth = sessionStorage.getItem(STORAGE_KEYS.AUTH) === 'true';
+    const email = sessionStorage.getItem(STORAGE_KEYS.USER_EMAIL);
+    // Invalidate if email was previously stored but does not match authorized owner
+    if (isAuth && email && email.toLowerCase() !== AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
+      sessionStorage.removeItem(STORAGE_KEYS.AUTH);
+      sessionStorage.removeItem(STORAGE_KEYS.USER_EMAIL);
+      return false;
+    }
+    return isAuth;
   });
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(() => {
-    return sessionStorage.getItem(STORAGE_KEYS.USER_EMAIL) || null;
+    const email = sessionStorage.getItem(STORAGE_KEYS.USER_EMAIL);
+    if (email && email.toLowerCase() !== AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
+      return null;
+    }
+    return email || null;
   });
 
   // Listen to Firebase Auth state for authorized administrator
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && user.email && user.email.toLowerCase() === AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
-        setIsAuthenticated(true);
-        setCurrentUserEmail(user.email);
-        sessionStorage.setItem(STORAGE_KEYS.AUTH, 'true');
-        sessionStorage.setItem(STORAGE_KEYS.USER_EMAIL, user.email);
+      if (user && user.email) {
+        if (user.email.toLowerCase() === AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
+          setIsAuthenticated(true);
+          setCurrentUserEmail(user.email);
+          sessionStorage.setItem(STORAGE_KEYS.AUTH, 'true');
+          sessionStorage.setItem(STORAGE_KEYS.USER_EMAIL, user.email);
+        } else {
+          // Explicitly reject and disconnect any non-admin email
+          setIsAuthenticated(false);
+          setCurrentUserEmail(null);
+          sessionStorage.removeItem(STORAGE_KEYS.AUTH);
+          sessionStorage.removeItem(STORAGE_KEYS.USER_EMAIL);
+        }
       }
     });
     return () => unsubscribe();
@@ -471,6 +492,32 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const verifyEmailAccess = async (
+    email: string
+  ): Promise<{ authorized: boolean; message: string; email: string }> => {
+    const cleaned = email.trim().toLowerCase();
+    const authorized = cleaned === AUTHORIZED_ADMIN_EMAIL.toLowerCase();
+
+    if (authorized) {
+      await logAction('Policy Verification: Granted', `Account "${email}" confirmed as authorized owner.`);
+      return {
+        authorized: true,
+        email,
+        message: `ACCESS GRANTED: Account "${email}" is the authorized administrator (${AUTHORIZED_ADMIN_EMAIL}). Full operations access is permitted.`,
+      };
+    } else {
+      await logAction(
+        'Policy Verification: Denied',
+        `Account "${email}" rejected. Access strictly restricted to "${AUTHORIZED_ADMIN_EMAIL}".`
+      );
+      return {
+        authorized: false,
+        email,
+        message: `ACCESS DENIED: Account "${email}" is NOT authorized. The Admin Console is strictly restricted to "${AUTHORIZED_ADMIN_EMAIL}".`,
+      };
+    }
+  };
+
   const updateCredentials = async (
     newUsername: string,
     newPasscode: string
@@ -769,6 +816,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         credentials,
         login,
         loginWithGoogle,
+        verifyEmailAccess,
         logout,
         updateCredentials,
         resetCredentialsToDefault,
