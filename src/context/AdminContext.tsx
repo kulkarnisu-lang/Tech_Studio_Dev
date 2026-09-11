@@ -11,7 +11,8 @@ import {
   serverTimestamp,
   getDoc,
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { db, auth, googleProvider } from '../lib/firebase';
 import {
   CompanyConfig,
   ServiceItem,
@@ -26,8 +27,12 @@ import { SERVICES_DATA } from '../data/services';
 import { FAQS_DATA } from '../data/faqs';
 import { INITIAL_INQUIRIES } from '../data/sampleInquiries';
 
+export const AUTHORIZED_ADMIN_EMAIL =
+  (import.meta.env.VITE_ADMIN_EMAIL as string) || 'kulkarnisu@gmail.com';
+
 const STORAGE_KEYS = {
   AUTH: 'techstudio_admin_auth_v1',
+  USER_EMAIL: 'techstudio_admin_email_v1',
   FALLBACK_CREDENTIALS: 'techstudio_admin_credentials_v2',
   FALLBACK_COMPANY: 'techstudio_company_config_v1',
   FALLBACK_SERVICES: 'techstudio_services_v1',
@@ -70,9 +75,12 @@ interface AdminContextType {
 
   // Authentication & Security
   isAuthenticated: boolean;
+  adminEmail: string;
+  currentUserEmail: string | null;
   credentials: AdminCredentials;
   login: (usernameOrPasscode: string, passcode?: string) => boolean;
-  logout: () => void;
+  loginWithGoogle: () => Promise<{ success: boolean; message: string }>;
+  logout: () => Promise<void>;
   updateCredentials: (newUsername: string, newPasscode: string) => Promise<{ success: boolean; message: string }>;
   resetCredentialsToDefault: () => Promise<void>;
 
@@ -117,6 +125,35 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem(STORAGE_KEYS.AUTH) === 'true';
   });
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(() => {
+    return sessionStorage.getItem(STORAGE_KEYS.USER_EMAIL) || null;
+  });
+
+  // Listen to Firebase Auth state for authorized administrator
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && user.email && user.email.toLowerCase() === AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
+        setIsAuthenticated(true);
+        setCurrentUserEmail(user.email);
+        sessionStorage.setItem(STORAGE_KEYS.AUTH, 'true');
+        sessionStorage.setItem(STORAGE_KEYS.USER_EMAIL, user.email);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Keyboard shortcut listener for Administrator access (Ctrl+Shift+A / Cmd+Shift+A)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        openAdmin();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Data States (initialized from local cache or defaults for zero-delay SSR / initial render)
   const [credentials, setCredentials] = useState<AdminCredentials>(() => {
@@ -377,13 +414,61 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (matchesCurrent || matchesDefault) {
       setIsAuthenticated(true);
+      setCurrentUserEmail(AUTHORIZED_ADMIN_EMAIL);
       sessionStorage.setItem(STORAGE_KEYS.AUTH, 'true');
+      sessionStorage.setItem(STORAGE_KEYS.USER_EMAIL, AUTHORIZED_ADMIN_EMAIL);
       logAction('Admin Logged In', `Authenticated as "${inputUser || credentials.username}".`);
       return true;
     }
 
     logAction('Login Failed', `Failed sign-in attempt for username "${inputUser || 'anonymous'}".`);
     return false;
+  };
+
+  const loginWithGoogle = async (): Promise<{ success: boolean; message: string }> => {
+    if (!auth) {
+      return {
+        success: false,
+        message: 'Firebase Authentication is not available. Please verify Firebase configuration or use Admin Credentials.',
+      };
+    }
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const email = user.email?.toLowerCase();
+
+      if (email === AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
+        setIsAuthenticated(true);
+        setCurrentUserEmail(user.email || AUTHORIZED_ADMIN_EMAIL);
+        sessionStorage.setItem(STORAGE_KEYS.AUTH, 'true');
+        sessionStorage.setItem(STORAGE_KEYS.USER_EMAIL, user.email || AUTHORIZED_ADMIN_EMAIL);
+        await logAction('Admin Google Auth', `Authorized sign-in by owner: ${user.email}`);
+        return {
+          success: true,
+          message: `Access granted! Welcome, ${user.displayName || user.email}.`,
+        };
+      } else {
+        await signOut(auth);
+        setIsAuthenticated(false);
+        setCurrentUserEmail(null);
+        sessionStorage.removeItem(STORAGE_KEYS.AUTH);
+        sessionStorage.removeItem(STORAGE_KEYS.USER_EMAIL);
+        await logAction(
+          'Unauthorized Auth Rejected',
+          `Rejected Google sign-in attempt from unauthorized account: ${user.email}`
+        );
+        return {
+          success: false,
+          message: `Access Denied: The account "${user.email}" is not authorized. The Admin Console is restricted exclusively to ${AUTHORIZED_ADMIN_EMAIL}.`,
+        };
+      }
+    } catch (err: any) {
+      console.error('Google Sign In Error:', err);
+      return {
+        success: false,
+        message: err.message || 'Failed to authenticate with Google.',
+      };
+    }
   };
 
   const updateCredentials = async (
@@ -436,10 +521,19 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
-  const logout = () => {
+  const logout = async () => {
     setIsAuthenticated(false);
+    setCurrentUserEmail(null);
     sessionStorage.removeItem(STORAGE_KEYS.AUTH);
-    logAction('Admin Logged Out', 'Session terminated by user.');
+    sessionStorage.removeItem(STORAGE_KEYS.USER_EMAIL);
+    if (auth && auth.currentUser) {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.warn('Sign out error:', err);
+      }
+    }
+    await logAction('Admin Logged Out', 'Session terminated by user.');
   };
 
   // -------------------------------------------------------------
@@ -670,8 +764,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         closeAdmin,
         isFirestoreConnected,
         isAuthenticated,
+        adminEmail: AUTHORIZED_ADMIN_EMAIL,
+        currentUserEmail,
         credentials,
         login,
+        loginWithGoogle,
         logout,
         updateCredentials,
         resetCredentialsToDefault,

@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth, Auth, GoogleAuthProvider } from 'firebase/auth';
 import firebaseConfigData from '../../firebase-applet-config.json';
 
 // Read Firebase Web API Key dynamically from environment variable
@@ -17,6 +18,7 @@ const firebaseConfig = {
 
 let appInstance: FirebaseApp | null = null;
 let dbInstance: Firestore | null = null;
+let authInstance: Auth | null = null;
 
 if (apiKey && apiKey.trim().length > 0) {
   try {
@@ -24,6 +26,7 @@ if (apiKey && apiKey.trim().length > 0) {
     dbInstance = firebaseConfigData.firestoreDatabaseId
       ? getFirestore(appInstance, firebaseConfigData.firestoreDatabaseId)
       : getFirestore(appInstance);
+    authInstance = getAuth(appInstance);
   } catch (err) {
     console.warn('Firebase initialization error:', err);
   }
@@ -31,6 +34,8 @@ if (apiKey && apiKey.trim().length > 0) {
 
 export const app = appInstance;
 export const db = dbInstance;
+export const auth = authInstance;
+export const googleProvider = new GoogleAuthProvider();
 export const isFirebaseConfigured = Boolean(apiKey && dbInstance);
 export default db;
 

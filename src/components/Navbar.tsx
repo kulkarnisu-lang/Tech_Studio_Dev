@@ -8,7 +8,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ onOpenConsultation }: NavbarProps) {
-  const { companyConfig, openAdmin } = useAdmin();
+  const { companyConfig, openAdmin, isAuthenticated, currentUserEmail } = useAdmin();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
@@ -102,15 +102,17 @@ export default function Navbar({ onOpenConsultation }: NavbarProps) {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={openAdmin}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-mono font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-              title="Admin Portal (#admin)"
-            >
-              <Shield className="w-3.5 h-3.5 text-sky-500" />
-              <span>Admin</span>
-            </button>
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={openAdmin}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-mono font-bold text-sky-700 bg-sky-50 dark:bg-sky-950/60 dark:text-sky-400 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/60 transition-colors cursor-pointer"
+                title={`Admin Portal (${currentUserEmail || 'Authorized'})`}
+              >
+                <Shield className="w-3.5 h-3.5 text-sky-500" />
+                <span>Admin</span>
+              </button>
+            )}
 
             <ThemeToggle />
             <button
@@ -126,14 +128,16 @@ export default function Navbar({ onOpenConsultation }: NavbarProps) {
 
           {/* Mobile Actions */}
           <div className="flex md:hidden items-center gap-2">
-            <button
-              type="button"
-              onClick={openAdmin}
-              className="p-1.5 rounded-md text-slate-600 dark:text-slate-400 hover:text-sky-500"
-              title="Admin Portal"
-            >
-              <Shield className="w-4 h-4 text-sky-500" />
-            </button>
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={openAdmin}
+                className="p-1.5 rounded-md text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/50"
+                title="Admin Portal"
+              >
+                <Shield className="w-4 h-4 text-sky-500" />
+              </button>
+            )}
             <ThemeToggle />
             <button
               id="mobile-menu-toggle"
@@ -170,17 +174,19 @@ export default function Navbar({ onOpenConsultation }: NavbarProps) {
               </a>
             ))}
 
-            <button
-              type="button"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                openAdmin();
-              }}
-              className="px-3 py-2 rounded-md text-xs font-mono uppercase font-bold text-sky-600 dark:text-sky-400 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-left"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Admin Operations Console</span>
-            </button>
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  openAdmin();
+                }}
+                className="px-3 py-2 rounded-md text-xs font-mono uppercase font-bold text-sky-600 dark:text-sky-400 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 text-left"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Admin Operations Console</span>
+              </button>
+            )}
 
             <div className="pt-4 mt-2 border-t border-slate-200 dark:border-slate-800">
               <button

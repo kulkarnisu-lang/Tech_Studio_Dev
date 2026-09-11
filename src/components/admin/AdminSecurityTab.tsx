@@ -14,7 +14,7 @@ import {
 import { useAdmin } from '../../context/AdminContext';
 
 export default function AdminSecurityTab() {
-  const { credentials, updateCredentials, resetCredentialsToDefault, activityLogs } = useAdmin();
+  const { credentials, updateCredentials, resetCredentialsToDefault, activityLogs, adminEmail, currentUserEmail } = useAdmin();
 
   // Form State
   const [newUsername, setNewUsername] = useState(credentials.username);
@@ -260,8 +260,27 @@ export default function AdminSecurityTab() {
             </h3>
 
             <div className="space-y-3 font-mono text-xs">
+              <div className="p-3 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 flex items-center justify-between">
+                <div>
+                  <span className="text-sky-700 dark:text-sky-300 font-bold block">Authorized Owner Account:</span>
+                  <span className="text-[11px] text-slate-500">Google OAuth restricted to this email</span>
+                </div>
+                <span className="font-bold text-sky-800 dark:text-sky-300 bg-white dark:bg-slate-900 px-2.5 py-1 rounded border border-sky-200 dark:border-sky-800">
+                  {adminEmail}
+                </span>
+              </div>
+
+              {currentUserEmail && (
+                <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+                  <span className="text-emerald-700 dark:text-emerald-300 font-bold">Active Authenticated Session:</span>
+                  <span className="font-bold text-emerald-800 dark:text-emerald-300 bg-white dark:bg-slate-900 px-2.5 py-1 rounded border border-emerald-200 dark:border-emerald-800">
+                    {currentUserEmail}
+                  </span>
+                </div>
+              )}
+
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <span className="text-slate-500">Current Username:</span>
+                <span className="text-slate-500">Passcode Username:</span>
                 <span className="font-bold text-slate-900 dark:text-sky-400 bg-white dark:bg-slate-950 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-800">
                   {credentials.username}
                 </span>

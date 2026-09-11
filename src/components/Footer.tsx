@@ -1,8 +1,8 @@
-import { ArrowUp, Terminal, Mail, Linkedin, Github, Shield } from 'lucide-react';
+import { ArrowUp, Terminal, Mail, Linkedin, Github, Shield, Lock } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 
 export default function Footer() {
-  const { companyConfig, openAdmin } = useAdmin();
+  const { companyConfig, openAdmin, isAuthenticated, currentUserEmail } = useAdmin();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -132,14 +132,27 @@ export default function Footer() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={openAdmin}
-              className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-slate-500 hover:text-sky-400 font-mono transition-colors cursor-pointer"
-            >
-              <Shield className="w-3 h-3 text-sky-500" />
-              <span>Admin Console</span>
-            </button>
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={openAdmin}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-950/60 border border-sky-800/80 text-sky-400 hover:text-sky-300 font-mono text-xs font-semibold transition-colors cursor-pointer"
+                title={`Admin Portal Active (${currentUserEmail || 'Authorized'})`}
+              >
+                <Shield className="w-3.5 h-3.5 text-sky-400" />
+                <span>Admin Console</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={openAdmin}
+                className="opacity-15 hover:opacity-80 transition-opacity p-1 text-slate-500 hover:text-slate-300 cursor-pointer rounded"
+                title="Owner Access (Ctrl+Shift+A)"
+                aria-label="Owner Access"
+              >
+                <Lock className="w-3 h-3" />
+              </button>
+            )}
 
             <button
               type="button"

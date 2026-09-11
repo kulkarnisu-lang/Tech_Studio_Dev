@@ -26,7 +26,7 @@ import ThemeToggle from '../ThemeToggle';
 type AdminTab = 'inquiries' | 'company' | 'services' | 'faqs' | 'analytics' | 'security';
 
 export default function AdminPortal() {
-  const { isAuthenticated, logout, closeAdmin, companyConfig, inquiries, isFirestoreConnected } = useAdmin();
+  const { isAuthenticated, logout, closeAdmin, companyConfig, inquiries, isFirestoreConnected, currentUserEmail, adminEmail } = useAdmin();
   const [activeTab, setActiveTab] = useState<AdminTab>('inquiries');
 
   // If not authenticated, show login gate
@@ -85,9 +85,9 @@ export default function AdminPortal() {
               <span>{isFirestoreConnected ? 'Firestore Cloud Synced' : 'Local Cache'}</span>
             </div>
 
-            <div className="hidden md:flex items-center gap-1.5 text-xs font-mono text-slate-500 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800">
+            <div className="hidden md:flex items-center gap-1.5 text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800">
               <Shield className="w-3.5 h-3.5 text-emerald-500" />
-              <span>{companyConfig.founderName}</span>
+              <span title={`Authorized owner: ${adminEmail}`}>{currentUserEmail || adminEmail}</span>
             </div>
 
             <ThemeToggle />
