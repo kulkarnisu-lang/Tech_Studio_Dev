@@ -1,0 +1,6 @@
+{
+  "name": "Tech_Studio - Quality Engineering & AI Automation",
+  "description": "Premium B2B consultancy website for Quality Engineering, Software Testing, Test Automation, and AI Automation consulting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

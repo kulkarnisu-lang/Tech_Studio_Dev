@@ -1,0 +1,26 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+
+# Environment variables & secrets
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Private keys, certificates & credentials
+*.pem
+*.key
+*.cert
+*.crt
+*.id_rsa
+*.keystore
+id_rsa*
+*credentials*.json
+secrets/

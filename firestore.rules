@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Inquiries: public can submit inquiries, anyone can read/update them in this consultation app
+    match /inquiries/{inquiryId} {
+      allow read, write: if true;
+    }
+
+    // Company profile & website settings
+    match /companyConfig/{configId} {
+      allow read, write: if true;
+    }
+
+    // QA Services catalog
+    match /services/{serviceId} {
+      allow read, write: if true;
+    }
+
+    // FAQs catalog
+    match /faqs/{faqId} {
+      allow read, write: if true;
+    }
+
+    // Administrative audit logs
+    match /activityLogs/{logId} {
+      allow read, write: if true;
+    }
+
+    // Admin security credentials
+    match /adminSettings/{settingId} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "inquiries": {
+      "description": "Customer consultation and quote requests submitted through the contact forms.",
+      "fields": {
+        "clientName": { "type": "string" },
+        "workEmail": { "type": "string" },
+        "organization": { "type": "string" },
+        "engagementType": { "type": "string" },
+        "estimatedTimeline": { "type": "string" },
+        "specifications": { "type": "string" },
+        "status": { "type": "string" },
+        "submittedAt": { "type": "string" },
+        "reviewedAt": { "type": "string", "optional": true },
+        "notes": { "type": "string", "optional": true }
+      }
+    },
+    "companyConfig": {
+      "description": "Company operational profile, hero statements, metrics, and office locations.",
+      "fields": {
+        "name": { "type": "string" },
+        "tagline": { "type": "string" },
+        "description": { "type": "string" },
+        "establishedYear": { "type": "number" },
+        "consultingHours": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "emergencyEscalation": { "type": "string" },
+        "headquartersAddress": { "type": "string" },
+        "heroEyebrow": { "type": "string" },
+        "heroTitle": { "type": "string" },
+        "heroSubtitle": { "type": "string" }
+      }
+    },
+    "services": {
+      "description": "Core QA & quality engineering service offerings.",
+      "fields": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "tagline": { "type": "string" },
+        "description": { "type": "string" },
+        "deliverables": { "type": "array" },
+        "techStack": { "type": "array" },
+        "featured": { "type": "boolean" },
+        "order": { "type": "number", "optional": true }
+      }
+    },
+    "faqs": {
+      "description": "Frequently asked questions catalog.",
+      "fields": {
+        "question": { "type": "string" },
+        "answer": { "type": "string" },
+        "category": { "type": "string" },
+        "order": { "type": "number", "optional": true }
+      }
+    },
+    "activityLogs": {
+      "description": "Audit trail of administrative modifications, inquiries, and security events.",
+      "fields": {
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "user": { "type": "string" }
+      }
+    },
+    "adminSettings": {
+      "description": "Security settings and admin credentials hash or config.",
+      "fields": {
+        "username": { "type": "string" },
+        "passcode": { "type": "string" },
+        "lastUpdated": { "type": "string" }
+      }
+    }
+  }
+}
